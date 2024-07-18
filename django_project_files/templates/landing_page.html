@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Stock Data App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous"/>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'styles.css' %}" />
+    <script defer src="{% static 'dark_mode_controller.js' %}"></script>
+  </head>
+
+  <body data-bs-theme="dark">
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">Portfolio Buddy.</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page" href="landing_page">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="stock_table">Stock Data</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="charts">Charts</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="user_profile">User Profile</a>
+            </li>
+          </ul>
+          <ul class="navbar-nav ms-auto">
+            <li>
+              <a class="nav-link" onclick="switchbox()"
+                ><img src="static/brightness.svg" alt="img" height="25"
+              /></a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <form class="px-md-2 mb-4" action="landing_page" id="form-alignment" method="post">
+      {% csrf_token %}
+      <div class="col-3">
+        <div class="form-floating mb-3">
+          <input type="text" id="add_stock" class="form-control" placeholder="Enter stock name" name="add_stock"/>
+          <label for="add_stock">Enter stock name to add</label>
+          {% if error == "Stock already added to portfolio"%}
+          <div style="color: red">{{error}}</div>
+          {% endif %}
+        </div>
+        <div class="form-floating mb-3">
+          <input type="text" id="add_buy_price" class="form-control" placeholder="Enter buy price" name="buy_price"/>
+          <label for="add_buy_price">Enter buy price</label>
+        </div>
+        <div class="form-floating mb-3">
+          <input type="text" id="add_quantity" class="form-control" placeholder="Enter buy price" name="share_quantity"/>
+          <label for="add_quantity">Enter total shares bought</label>
+          {% if error == "You must add stock name, quantity of shares and buy price to add the stock to your portfolio!"%}
+              <div style="color: red">{{error}}</div>
+          {% endif %}
+        </div>
+        <hr/>
+      </div>
+
+      <div class="form-floating mb-3 col-3">
+        <input type="text" id="delete_stock" class="form-control" placeholder="Enter stock name" name="delete_stock"/>
+        <label for="add_stock">Enter stock name to delete</label>
+        {% if error == "Stock not in portfolio"%}
+          <div style="color: red"> {{error}} </div>
+        {% endif %}
+        {% if error == "Please add stock name to add or delete."%}
+          <div style="color: red"> {{error}} </div>
+        {% endif %}
+        {% if error == "Please chose either add or delete function and not both!" %}
+          <div style="color: red"> {{error}} </div>
+        {% endif %}
+      </div>
+      <input type="submit" class="btn btn-primary" />
+    </form>
+
+    <div id="sheet_button" class="mb-4">
+      <div class="mb-3">
+        <a href="{{link}}" type="button" class="btn btn-outline-success" target="”_blank”">Open Sheets</a>
+        {% if link_error == "Please add link to Google sheets in User Profile page."%}
+          <div style="color: red">{{link_error}}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <form class="px-md-2 mb-4" action="run_sync" method="post" style="margin-left: 1%">
+      {% csrf_token %}
+      <div class="form-floating mb-2 col-3">
+        <input type="date" class="form-control"id="from_date" name="from_date"/>
+        <label for="from_date">From date</label>
+      </div>
+      <div class="form-floating mb-3 col-3">
+        <input type="date" class="form-control" id="to_date" name="to_date" />
+        <label for="to_date">To date</label>
+      </div>
+      <input type="submit" value="Run Sync" class="btn btn-outline-warning" />
+      {% if output_msg == "Code run complete." %}
+        <div style="color: green">{{output_msg}}</div>
+      {% endif %}
+      {% if output == "It's the weekend. No markets today!" %}
+        <div style="color: green">{{output}}</div>
+      {% endif %}
+      {% if output == "Data couldn't be retrieved from NSE. Probably, markets are on a holiday! Check logs for more info." %}
+        <div style="color: green">{{output}}</div>
+      {% endif %}
+      {% if error == "Choose from-date and to-date to get stock data." %}
+        <div style="color: red">{{error}}</div>
+      {% endif %}
+      {% if error == "Make sure from-date is lesser than to-date." %}
+      <div style="color: red">{{error}}</div>
+      {% endif %}
+      {% if error == "To-date should be at a later date than the from-date." %}
+        <div style="color: red">{{error}}</div>
+      {% endif %}
+      {% if error == "Make sure the to-date is not at a farther date than today's date." %}
+        <div style="color: red">{{error}}</div>
+      {% endif %}
+      {% if error == "Currently app only supports a from_date, to_date difference of one day. A from_date, to_date difference of more than one day will be implemented soon." %}
+        <div style="color: red">{{error}}</div>
+      {% endif %}
+    </form>
+    <form class="mb-4" action="delete_multiple" method="post">
+      {% csrf_token %}
+      <div id="list-alignment">
+        <h3 class="mb-4">Your Portfolio.</h3>
+        <div class="mb-4 col-2" id="list-group" style="border-style: solid;padding-left: 1%;padding-top: 1%;padding-bottom: 1%;overflow: scroll; max-height: 300px; border-radius: 25px;">
+          {% for stock_name in stock_list %}
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="{{ stock_name }}" id="flexCheckDefault" name="stock_list[]"/>
+              <label class="form-check-label" for="flexCheckDefault">
+                {{stock_name}}
+              </label>
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="mb-4">
+          <button class="btn btn-outline-danger">Delete stocks</button>
+          {% if error == "Select at-least one stock from the list before clicking delete."%}
+            <div style="color: red">{{error}}</div>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+  </body>
+</html>
